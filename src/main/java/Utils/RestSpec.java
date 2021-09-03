@@ -7,6 +7,7 @@ import io.restassured.specification.RequestSpecification;
 
 public abstract class RestSpec {
     public static final String BASE_URL = "https://reqres.in/api";
+    public static final String BASE_URL1 = "https://reqres.in/";
     public  Cookies cookies;
     protected abstract String getBasePath();
     public RequestSpecification REQUEST_SPECIFICATION;
