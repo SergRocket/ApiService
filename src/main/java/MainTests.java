@@ -25,14 +25,6 @@ public class MainTests {
             .build();
 
     @Test
-    public void getUsers(){
-        given()
-                .spec(REQUEST_SPECIFICATION)
-                .when().get()
-                .then().statusCode(200);
-    }
-
-    @Test
     public void getOneUser(){
         given()
                 .spec(REQUEST_SPECIFICATION)
@@ -76,9 +68,10 @@ public class MainTests {
                 .when().get()
                 .then().statusCode(200)
                 .extract().jsonPath().getList("data", CheckEmailTest.class);
+        System.out.print(users.get(2));
     }
 
-    @Test
+    /*@Test
     public void createUser(){
         ParamForUserCreation userCreate = UserGenerator.getSimpleUser();
         CreateUserResponse creationResponce = api.createUser(userCreate);
@@ -89,6 +82,21 @@ public class MainTests {
         assertThat(userCreate).isNotNull()
         .extracting(ParamForUserCreation::getName)
         .isEqualTo(userCreate.getName());
+    }*/
+
+    @Test
+    public void crUser(){
+        ParamForUserCreation create = new ParamForUserCreation();
+        create.setName("Sam");
+        create.setPosition("testQA");
+
+        CreateUserResponse rs = given()
+                .baseUri("https://reqres.in/api")
+                .basePath("/users")
+                .contentType(ContentType.JSON)
+                .body(create)
+                .when().post()
+                .then().extract().as(CreateUserResponse.class);
     }
 
 }

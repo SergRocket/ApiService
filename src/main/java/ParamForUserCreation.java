@@ -9,4 +9,5 @@ import lombok.NoArgsConstructor;
 public class ParamForUserCreation {
     private String name;
     private String position;
+
 }
