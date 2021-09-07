@@ -12,7 +12,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 
 public class MainTests {
     private static Autorization api;
-
+    private static UserFullSpec steps;
     @BeforeClass
     public static void prepeareClient(){
         api = Autorization.loginAs("eve.holt@reques.in", "citysLicka");
@@ -71,32 +71,32 @@ public class MainTests {
         System.out.print(users.get(2));
     }
 
-    /*@Test
+    @Test
     public void createUser(){
         ParamForUserCreation userCreate = UserGenerator.getSimpleUser();
-        CreateUserResponse creationResponce = api.createUser(userCreate);
-        assertThat(creationResponce).isNotNull()
+        UserSteps userAPI = new UserSteps();
+        CreateUserResponse paramForUser = userAPI.createUser(userCreate);
+        assertThat(paramForUser).isNotNull()
         .extracting(CreateUserResponse::getName)
         .isEqualTo(userCreate.getName());
-
         assertThat(userCreate).isNotNull()
         .extracting(ParamForUserCreation::getName)
         .isEqualTo(userCreate.getName());
-    }*/
+    }
 
     @Test
     public void crUser(){
         ParamForUserCreation create = new ParamForUserCreation();
         create.setName("Sam");
         create.setPosition("testQA");
-
-        CreateUserResponse rs = given()
-                .baseUri("https://reqres.in/api")
-                .basePath("/users")
-                .contentType(ContentType.JSON)
+        CreateUserResponse rs = given().spec(REQUEST_SPECIFICATION)
                 .body(create)
                 .when().post()
                 .then().extract().as(CreateUserResponse.class);
+        assertThat(rs)
+                .isNotNull()
+                .extracting(CreateUserResponse::getName)
+                .isEqualTo(create.getName());
     }
 
 }
