@@ -1,5 +1,7 @@
+import Utils.RestSpecForGameApi;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
+import io.restassured.http.Cookies;
 import io.restassured.specification.RequestSpecification;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -13,6 +15,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 public class MainTests {
     private static Autorization api;
     private static UserFullSpec steps;
+
     @BeforeClass
     public static void prepeareClient(){
         api = Autorization.loginAs("eve.holt@reques.in", "citysLicka");
@@ -23,6 +26,70 @@ public class MainTests {
             .setBasePath("/users")
             .setContentType(ContentType.JSON)
             .build();
+    private static final RequestSpecification REQUEST_SPEC = new RequestSpecBuilder()
+            .setBaseUri("http://localhost")
+            .setBasePath("/app/")
+            .setPort(8080)
+            .addHeader("Content-Type", "application/json")
+            .addHeader("Accept", "application/json")
+            .build();
+
+    @Test
+   public void createNewGame(){
+        String gameBody = "{\n" +
+                "  \"id\": 19,\n" +
+                "  \"name\": \"MyGame3\",\n" +
+                "  \"releaseDate\": \"2020-09-15T13:48:28.555Z\",\n" +
+                "  \"reviewScore\": 59,\n" +
+                "  \"category\": \"Shooters\",\n" +
+                "  \"rating\": \"Fine\"\n" +
+                "}";
+        given().spec(REQUEST_SPEC).body(gameBody)
+                .when().post()
+                .then().statusCode(200);
+    }
+
+    @Test
+    public void updateGameInfo(){
+        String gameBody = "{\n" +
+                "  \"id\": 19,\n" +
+                "  \"name\": \"MyGame4\",\n" +
+                "  \"releaseDate\": \"2020-09-15T13:48:28.555Z\",\n" +
+                "  \"reviewScore\": 61,\n" +
+                "  \"category\": \"Shoot\",\n" +
+                "  \"rating\": \"Perfect\"\n" +
+                "}";
+        given().spec(REQUEST_SPEC).body(gameBody)
+                .when().put()
+                .then().statusCode(200);
+    }
+
+    @Test
+    public void getGames(){
+        String games = given().spec(REQUEST_SPEC)
+                .when().get()
+                .then()
+                .log().body()
+                .statusCode(200).extract().asString();
+        System.out.print(games);
+    }
+
+    @Test
+    public void getSpecificVideoGame(){
+        given().spec(REQUEST_SPEC).pathParam("videoGameId", 2)
+                .when().get(VideoGamesEndpoints.SINGLE_VIDEO_GAME)
+        .then().statusCode(200).log().body();
+    }
+
+    @Test
+    public void getRandomGame(){
+        List<String> games = given().spec(REQUEST_SPEC)
+                .when().get()
+                .then()
+                .statusCode(200).extract().xmlPath().getList("videoGames.videoGame.name");
+        int randomGame = (int)(Math.random() * games.size());
+        System.out.print(games.get(randomGame));
+    }
 
     @Test
     public void getOneUser(){
@@ -34,7 +101,7 @@ public class MainTests {
                 .body("data[0].email", equalTo("george.bluth@reqres.in"));
     }
 
-    @Test
+   @Test
     public void printUser(){
         String user = given().spec(REQUEST_SPECIFICATION)
                 .when().get()
@@ -57,7 +124,7 @@ public class MainTests {
                 .spec(REQUEST_SPECIFICATION)
                 .when().get()
                 .then().statusCode(200)
-                .extract().jsonPath().getList("data.rmail");
+                .extract().jsonPath().getList("data.email");
         System.out.print(emails.get(1));
     }
 
@@ -87,8 +154,8 @@ public class MainTests {
     @Test
     public void crUser(){
         ParamForUserCreation create = new ParamForUserCreation();
-        create.setName("Sam");
-        create.setPosition("testQA");
+        create.setName("Jane");
+        create.setPosition("testQA-Automation");
         CreateUserResponse rs = given().spec(REQUEST_SPECIFICATION)
                 .body(create)
                 .when().post()

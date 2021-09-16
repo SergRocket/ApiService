@@ -7,11 +7,12 @@ import io.restassured.specification.RequestSpecification;
 
 public abstract class RestSpec {
     public static final String BASE_URL = "https://reqres.in/api";
+
     public static final String BASE_URL1 = "https://reqin/";
     public  Cookies cookies;
     protected abstract String getBasePath();
     public RequestSpecification REQUEST_SPECIFICATION;
-    public RestSpec(Cookies cookies){
+        public RestSpec(Cookies cookies){
         this.cookies = cookies;
         REQUEST_SPECIFICATION = new RequestSpecBuilder()
                 .addCookies(cookies)
@@ -20,4 +21,5 @@ public abstract class RestSpec {
                 .setContentType(ContentType.JSON)
                 .build();
     }
+
 }
