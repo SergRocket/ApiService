@@ -2,6 +2,8 @@ import Utils.RestSpecForGameApi;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.http.Cookies;
+import io.restassured.http.Headers;
+import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -33,6 +35,12 @@ public class MainTests {
             .addHeader("Content-Type", "application/json")
             .addHeader("Accept", "application/json")
             .build();
+    private static final RequestSpecification FOOTBALL_SPEC = new RequestSpecBuilder()
+            .setBaseUri("http://api.football-data.org")
+            .setBasePath("/v2/")
+            .addHeader("X-Auth", "af7f10f6b76f4518b0347b88aa539f12")
+            .addHeader("X-Response-Control", "minifield")
+            .build();
 
     @Test
    public void createNewGame(){
@@ -45,7 +53,7 @@ public class MainTests {
                 "  \"rating\": \"Fine\"\n" +
                 "}";
         given().spec(REQUEST_SPEC).body(gameBody)
-                .when().post()
+                .when().post(VideoGamesEndpoints.ALL_VIDEO_GAMES)
                 .then().statusCode(200);
     }
 
@@ -59,15 +67,23 @@ public class MainTests {
                 "  \"category\": \"Shoot\",\n" +
                 "  \"rating\": \"Perfect\"\n" +
                 "}";
-        given().spec(REQUEST_SPEC).body(gameBody)
-                .when().put()
+        given().spec(REQUEST_SPEC).pathParam("videoGameId", 2)
+                .body(gameBody)
+                .when().put(VideoGamesEndpoints.SINGLE_VIDEO_GAME)
+                .then().statusCode(200);
+    }
+
+    @Test
+    public void deleteSpecificGame(){
+        given().spec(REQUEST_SPEC).pathParam("videoGameId", 2)
+                .when().delete(VideoGamesEndpoints.SINGLE_VIDEO_GAME)
                 .then().statusCode(200);
     }
 
     @Test
     public void getGames(){
         String games = given().spec(REQUEST_SPEC)
-                .when().get()
+                .when().get(VideoGamesEndpoints.ALL_VIDEO_GAMES)
                 .then()
                 .log().body()
                 .statusCode(200).extract().asString();
@@ -84,11 +100,63 @@ public class MainTests {
     @Test
     public void getRandomGame(){
         List<String> games = given().spec(REQUEST_SPEC)
-                .when().get()
+                .when().get(VideoGamesEndpoints.ALL_VIDEO_GAMES)
                 .then()
                 .statusCode(200).extract().xmlPath().getList("videoGames.videoGame.name");
         int randomGame = (int)(Math.random() * games.size());
         System.out.print(games.get(randomGame));
+    }
+
+    @Test
+    public void getArea(){
+        given().spec(FOOTBALL_SPEC)
+                .when().get(FootBallEndpoints.ALL_AREAS)
+                .then().statusCode(200);
+    }
+
+    @Test
+    public void getAreas(){
+       List<String> areas = given().spec(FOOTBALL_SPEC)
+                .when().get(FootBallEndpoints.ALL_AREAS)
+                .then().statusCode(200).extract().jsonPath().getList("areas.name");
+       System.out.print(areas);
+    }
+
+    @Test
+    public void getHeaders(){
+        Response response = given()
+                .given().spec(FOOTBALL_SPEC).pathParam("areaId", 2012)
+                .when().get(FootBallEndpoints.AREAS_BY_ID).then().statusCode(200)
+                .extract().response();
+        //Headers headers = response.getHeaders();
+        String contentType = response.getHeader("Content-Type");
+        System.out.print(contentType);
+    }
+
+    @Test
+    public void getSpecificArea(){
+        String area = given().spec(FOOTBALL_SPEC).pathParam("areaId", 2000)
+                .when().get(FootBallEndpoints.AREAS_BY_ID)
+                .then().statusCode(200).extract().asString();
+        System.out.print(area);
+    }
+
+    @Test
+    public void checkNameValueOfSpecificArea(){
+        given().spec(FOOTBALL_SPEC).pathParam("areaId", 2015)
+                .when().get(FootBallEndpoints.AREAS_BY_ID)
+                .then().statusCode(200).body("id", equalTo(2015)).body("name",
+                equalTo("Australia"));
+    }
+
+    @Test
+    public void printAreaNames(){
+        List<String> teams = given().spec(FOOTBALL_SPEC)
+                .when().get(FootBallEndpoints.ALL_AREAS)
+                .then().statusCode(200).extract().jsonPath().getList("areas.name");
+        for (String teamName : teams){
+            System.out.println(teamName);
+        }
     }
 
     @Test
