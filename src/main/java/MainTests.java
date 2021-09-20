@@ -45,8 +45,8 @@ public class MainTests {
     @Test
    public void createNewGame(){
         String gameBody = "{\n" +
-                "  \"id\": 19,\n" +
-                "  \"name\": \"MyGame3\",\n" +
+                "  \"id\": 11,\n" +
+                "  \"name\": \"MyGame5\",\n" +
                 "  \"releaseDate\": \"2020-09-15T13:48:28.555Z\",\n" +
                 "  \"reviewScore\": 59,\n" +
                 "  \"category\": \"Shooters\",\n" +
@@ -55,6 +55,37 @@ public class MainTests {
         given().spec(REQUEST_SPEC).body(gameBody)
                 .when().post(VideoGamesEndpoints.ALL_VIDEO_GAMES)
                 .then().statusCode(200);
+    }
+
+    @Test
+    public void createGame() throws InterruptedException {
+        ParamForGameCreation  paramForGame = new ParamForGameCreation();
+        paramForGame.setId(48);
+        paramForGame.setName("GTA-14");
+        paramForGame.setReleaseDate("2020-09-20T11:56:33.236Z");
+        paramForGame.setReviewScore(90);
+        paramForGame.setCategory("Fight");
+        paramForGame.setRating("Finish");
+        CreateGameResponse cgr = given().spec(REQUEST_SPEC).body(paramForGame)
+                .when().post(VideoGamesEndpoints.ALL_VIDEO_GAMES)
+                .then().statusCode(200).extract().as(CreateGameResponse.class);
+        assertThat(cgr).extracting(CreateGameResponse :: getStatus)
+                .isEqualTo("Record Added Successfully");
+        Thread.sleep(2000);
+        given().spec(REQUEST_SPEC)
+                .pathParam("videoGameId", paramForGame.getId())
+                .when().get(VideoGamesEndpoints.SINGLE_VIDEO_GAME)
+                .then().statusCode(200).body("name", equalTo(paramForGame.getName())).body("reviewScore",
+                equalTo(paramForGame.getReviewScore()));
+
+    }
+
+    /*statusCode(200).body("id", equalTo(2015)).body("name",
+                                                   equalTo("Australia"));*/
+
+    @Test
+    public void checkPreviouslyCreatedGame(){
+
     }
 
     @Test
@@ -222,8 +253,8 @@ public class MainTests {
     @Test
     public void crUser(){
         ParamForUserCreation create = new ParamForUserCreation();
-        create.setName("Jane");
-        create.setPosition("testQA-Automation");
+        create.setName("Janis");
+        create.setPosition("testQAA");
         CreateUserResponse rs = given().spec(REQUEST_SPECIFICATION)
                 .body(create)
                 .when().post()
@@ -233,5 +264,4 @@ public class MainTests {
                 .extracting(CreateUserResponse::getName)
                 .isEqualTo(create.getName());
     }
-
 }

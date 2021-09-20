@@ -6,7 +6,11 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 @NoArgsConstructor @AllArgsConstructor
-public class ParamForUserCreation {
+public class ParamForGameCreation {
+    private int id;
+    private String releaseDate;
     private String name;
-    private String position;
+    private int reviewScore;
+    private String category;
+    private String rating;
 }
