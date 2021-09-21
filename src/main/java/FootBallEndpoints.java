@@ -6,5 +6,6 @@ public interface FootBallEndpoints {
     String COMPETITIONS_BY_ID = "competitions/{compid}";
     String TEAMS_BY_ID = "teams/{teamId}";
     String ALL_TEAMS = "teams";
+    String COMPETITONS_TEAMS = "competitions/{compId}/teams";
 
 }

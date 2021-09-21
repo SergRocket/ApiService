@@ -8,11 +8,16 @@ import io.restassured.specification.RequestSpecification;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.byLessThan;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.Matchers.lessThan;
 
 public class MainTests {
     private static Autorization api;
@@ -38,7 +43,7 @@ public class MainTests {
     private static final RequestSpecification FOOTBALL_SPEC = new RequestSpecBuilder()
             .setBaseUri("http://api.football-data.org")
             .setBasePath("/v2/")
-            .addHeader("X-Auth", "af7f10f6b76f4518b0347b88aa539f12")
+            .addHeader("X-Auth-Token", "af7f10f6b76f4518b0347b88aa539f12")
             .addHeader("X-Response-Control", "minifield")
             .build();
 
@@ -58,6 +63,59 @@ public class MainTests {
     }
 
     @Test
+    public void extractMapOfElements(){
+        Map<String, ?> allDataAboutTeam = given().spec(FOOTBALL_SPEC)
+                .pathParam("compId", 2021)
+                .when().get(FootBallEndpoints.COMPETITONS_TEAMS)
+                .then().statusCode(200).extract().jsonPath()
+                .getMap("teams.find { it.name == 'Aston Villa FC'}");
+        System.out.print("Vap of the team`s data is " + allDataAboutTeam);
+    }
+
+    @Test
+    public void extractSingleValue(){
+        String certainPlayer = given().spec(FOOTBALL_SPEC).pathParam("teamId", 57)
+                .when().get(FootBallEndpoints.TEAMS_BY_ID)
+                .then().statusCode(200).extract().jsonPath().getString("squad.find { it.shirtNumber == 48 }.name");
+        System.out.print("Name of the player is " + certainPlayer);
+    }
+
+    @Test
+    public void extractListOfValues(){
+        List<String> playerNames = given().spec(FOOTBALL_SPEC).pathParam("teamId", 57)
+                .when().get(FootBallEndpoints.TEAMS_BY_ID)
+                .then().statusCode(200).extract().jsonPath().getList("squad.findAll { it.id >= 1200 }.name");
+        System.out.print("List of players contains " + playerNames);
+    }
+
+    @Test
+    public void extractSingleHighestValue(){
+        String playerName = given().spec(FOOTBALL_SPEC).pathParam("teamId", 57)
+                .when().get(FootBallEndpoints.TEAMS_BY_ID)
+                .then().statusCode(200).extract().jsonPath().getString("squad.max { it.shirtNumber }.name");
+        System.out.print("Player with highest Id is " + playerName);
+    }
+
+    @Test
+    public void extractAndAddValues(){
+        int sumOfAllIds = given().spec(FOOTBALL_SPEC).pathParam("teamId", 57)
+                .when().get(FootBallEndpoints.TEAMS_BY_ID)
+                .then().statusCode(200).extract().jsonPath().getInt("squad.collect { it.id }.sum()");
+        System.out.print("Sum of all ids " + sumOfAllIds);
+
+    }
+
+    @Test
+    public void extractMapOfObjectWithFind(){
+        Map<String, ?> playerOfCertainPosition = given().spec(FOOTBALL_SPEC).pathParam("teamId", 57)
+                .when().get(FootBallEndpoints.TEAMS_BY_ID)
+                .then().statusCode(200).extract().jsonPath()
+                .getMap("squad.findAll { it.position == 'Goalkeeper'}.find { it.nationality == 'Germany' }");
+        System.out.print("Player as Goalkeeper and form Greece is " + playerOfCertainPosition);
+    }
+
+
+    @Test
     public void createGame() throws InterruptedException {
         ParamForGameCreation  paramForGame = new ParamForGameCreation();
         paramForGame.setId(48);
@@ -68,23 +126,17 @@ public class MainTests {
         paramForGame.setRating("Finish");
         CreateGameResponse cgr = given().spec(REQUEST_SPEC).body(paramForGame)
                 .when().post(VideoGamesEndpoints.ALL_VIDEO_GAMES)
-                .then().statusCode(200).extract().as(CreateGameResponse.class);
+                .then().statusCode(200).time(lessThan(880L))
+                .extract().as(CreateGameResponse.class);
         assertThat(cgr).extracting(CreateGameResponse :: getStatus)
                 .isEqualTo("Record Added Successfully");
         Thread.sleep(2000);
         given().spec(REQUEST_SPEC)
                 .pathParam("videoGameId", paramForGame.getId())
                 .when().get(VideoGamesEndpoints.SINGLE_VIDEO_GAME)
-                .then().statusCode(200).body("name", equalTo(paramForGame.getName())).body("reviewScore",
+                .then().statusCode(200).time(lessThan(780L))
+                .body("name", equalTo(paramForGame.getName())).body("reviewScore",
                 equalTo(paramForGame.getReviewScore()));
-
-    }
-
-    /*statusCode(200).body("id", equalTo(2015)).body("name",
-                                                   equalTo("Australia"));*/
-
-    @Test
-    public void checkPreviouslyCreatedGame(){
 
     }
 
@@ -133,7 +185,8 @@ public class MainTests {
         List<String> games = given().spec(REQUEST_SPEC)
                 .when().get(VideoGamesEndpoints.ALL_VIDEO_GAMES)
                 .then()
-                .statusCode(200).extract().xmlPath().getList("videoGames.videoGame.name");
+                .statusCode(200).time(lessThan(580L))
+                .extract().xmlPath().getList("videoGames.videoGame.name");
         int randomGame = (int)(Math.random() * games.size());
         System.out.print(games.get(randomGame));
     }
@@ -146,10 +199,24 @@ public class MainTests {
     }
 
     @Test
+    public void mesureResponseTime(){
+        long responceTime = given().spec(FOOTBALL_SPEC)
+                .when().get(FootBallEndpoints.ALL_TEAMS).time();
+        System.out.print("Responce time is " + responceTime);
+    }
+
+    @Test
+    public void checkResponceTime(){
+        given().spec(FOOTBALL_SPEC)
+                .when().get(FootBallEndpoints.ALL_AREAS)
+                .then().statusCode(200).time(lessThan(580L));
+    }
+
+    @Test
     public void getAreas(){
        List<String> areas = given().spec(FOOTBALL_SPEC)
                 .when().get(FootBallEndpoints.ALL_AREAS)
-                .then().statusCode(200).extract().jsonPath().getList("areas.name");
+                .then().statusCode(200).time(lessThan(780L)).extract().jsonPath().getList("areas.name");
        System.out.print(areas);
     }
 
@@ -158,6 +225,7 @@ public class MainTests {
         Response response = given()
                 .given().spec(FOOTBALL_SPEC).pathParam("areaId", 2012)
                 .when().get(FootBallEndpoints.AREAS_BY_ID).then().statusCode(200)
+                .time(lessThan(780L))
                 .extract().response();
         //Headers headers = response.getHeaders();
         String contentType = response.getHeader("Content-Type");
@@ -258,7 +326,7 @@ public class MainTests {
         CreateUserResponse rs = given().spec(REQUEST_SPECIFICATION)
                 .body(create)
                 .when().post()
-                .then().extract().as(CreateUserResponse.class);
+                .then().time(lessThan(780L)).extract().as(CreateUserResponse.class);
         assertThat(rs)
                 .isNotNull()
                 .extracting(CreateUserResponse::getName)
